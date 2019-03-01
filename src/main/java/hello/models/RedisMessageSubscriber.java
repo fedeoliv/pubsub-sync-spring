@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class RedisMessageSubscriber implements MessageListener {
  
-    public static List<String> messageList = new ArrayList<String>();
+    public List<String> messageList = new ArrayList<String>();
  
     public void onMessage(Message message, byte[] pattern) {
         messageList.add(message.toString());

@@ -11,5 +11,5 @@ public interface Provider {
     void setAsync(String key, String value);
     void setAndNotifyAsync(String key, String value);
     String getAsync(String key);
-    void watchAsync(String key); 
+    String watchAsync(String key); 
 }

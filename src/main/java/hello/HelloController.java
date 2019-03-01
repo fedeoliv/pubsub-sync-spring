@@ -35,9 +35,9 @@ public class HelloController {
         RedisProvider provider = new RedisProvider("localhost", 6379);
         provider.setAsync(key, "Waiting");
 
-        provider.watchAsync(key);
+        String status = provider.watchAsync(key);
         
-        return new ResponseEntity<String>("test", HttpStatus.OK);
+        return new ResponseEntity<String>(status, HttpStatus.OK);
 
         // try {
         //     provider.setAsync(key, "Waiting").get();
@@ -54,7 +54,33 @@ public class HelloController {
 		// return new ResponseEntity<String>("Error", HttpStatus.NOT_ACCEPTABLE);
     }
 
-    
+    @GetMapping("/set")
+    public ResponseEntity<String> set(@RequestParam String key, @RequestParam String value) {
+        if (StringUtils.isNullOrWhitespace(key)) {
+            throw new IllegalArgumentException("Invalid key");
+        }
 
-    
+        if (StringUtils.isNullOrWhitespace(value)) {
+            throw new IllegalArgumentException("Invalid value");
+        }
+        
+        RedisProvider provider = new RedisProvider("localhost", 6379);
+        provider.setAndNotifyAsync(key, value);
+        
+        return new ResponseEntity<String>(HttpStatus.OK);
+
+        // try {
+        //     provider.setAsync(key, "Waiting").get();
+        //     String finalStatus = provider.watchAsync(key);
+            
+        //     return new ResponseEntity<String>(finalStatus, HttpStatus.OK);
+
+        // } catch (InterruptedException e) {
+        //     e.printStackTrace();
+        // } catch (ExecutionException e) {
+        //     e.printStackTrace();
+        // }
+
+		// return new ResponseEntity<String>("Error", HttpStatus.NOT_ACCEPTABLE);
+    }
 }

@@ -37,18 +37,23 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public void watchAsync(String key) {
+    public String watchAsync(String key) {
+        RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
+        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
         RedisMessageListenerContainer container = new RedisMessageListenerContainer(); 
 
         container.setConnectionFactory(jedisConnectionFactory("localhost", 6379)); 
-        container.addMessageListener(messageListener(), new ChannelTopic(key)); 
+        container.addMessageListener(adapter, new ChannelTopic(key)); 
         container.afterPropertiesSet();
         container.start();
+
+        while(subscriber.messageList.isEmpty()) {
+
+        }
+
+        return subscriber.messageList.get(0);
     }
 
-    MessageListenerAdapter messageListener() { 
-        return new MessageListenerAdapter(new RedisMessageSubscriber());
-    }
 
     @Bean
     private StringRedisTemplate redisTemplate(String hostName, int port) {
