@@ -1,5 +1,6 @@
 package hello.models;
 
+import java.util.concurrent.CompletableFuture;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.StringRedisConnection;
@@ -9,6 +10,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import static com.ea.async.Async.await;
 
 // @Service
 public class RedisProvider implements Provider {
@@ -19,41 +21,38 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public void setAsync(String key, String value) {
-        // RedisMessagePublisher publisher = createPublisher(key.toString());
-
-        stringSet(key, value);
+    public CompletableFuture<Void> setAsync(String key, String value) {
+        return CompletableFuture.supplyAsync(() -> {
+            await(stringSet(key, value));
+            return null;
+        });
     }
 
     @Override
-    public void setAndNotifyAsync(String key, String value) {
-        setAsync(key, value);
-        publish(key, value);
+    public CompletableFuture<Void> setAndNotifyAsync(String key, String value) {
+        return CompletableFuture.supplyAsync(() -> {
+            await(setAsync(key, value));
+            await(publish(key, value));
+
+            return null;
+        });
     }
 
     @Override
-    public String getAsync(String key) {
-        return stringGet(key.toString());
+    public CompletableFuture<String> getAsync(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            return stringGet(key.toString());
+        });
     }
 
     @Override
-    public String watchAsync(String key) {
-        RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
-        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer(); 
+    public synchronized CompletableFuture<String> watchAsync(String key) {
+        String lastValue = subscribeAsync(key);
 
-        container.setConnectionFactory(jedisConnectionFactory("localhost", 6379)); 
-        container.addMessageListener(adapter, new ChannelTopic(key)); 
-        container.afterPropertiesSet();
-        container.start();
-
-        while(subscriber.messageList.isEmpty()) {
-
-        }
-
-        return subscriber.messageList.get(0);
+        return CompletableFuture.supplyAsync(() -> {
+            return lastValue;
+        });
     }
-
 
     @Bean
     private StringRedisTemplate redisTemplate(String hostName, int port) {
@@ -70,23 +69,51 @@ public class RedisProvider implements Provider {
         return new JedisConnectionFactory(redisStandaloneConfiguration);
     }
 
-    private void stringSet(String key, String value) {
+    private CompletableFuture<Void> stringSet(String key, String value) {
+        return CompletableFuture.supplyAsync(() -> {
+            redisTemplate.execute((RedisCallback<String>) connection -> {
+                StringRedisConnection stringConn = (StringRedisConnection) connection;
+                stringConn.set(key, value);
+                return null;
+            });
 
-        redisTemplate.execute((RedisCallback<String>) connection -> {
-			StringRedisConnection stringConn = (StringRedisConnection) connection;
-			stringConn.set(key, value);
-			return null;
+            return null;
         });
+
     }
 
     private String stringGet(String key) {
         return redisTemplate.execute((RedisCallback<String>) connection -> {
-			StringRedisConnection stringConn = (StringRedisConnection) connection;
-			return stringConn.get(key);
+            StringRedisConnection stringConn = (StringRedisConnection) connection;
+            return stringConn.get(key);
         });
     }
 
-    private void publish(String key, String value) {
-        redisTemplate.convertAndSend(key, value);
+    private CompletableFuture<Void> publish(String key, String value) {
+        return CompletableFuture.supplyAsync(() -> {
+            redisTemplate.convertAndSend(key, value);
+            return null;
+        });
+    }
+
+    private String subscribeAsync(String key) {
+        RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
+        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+
+        container.setConnectionFactory(jedisConnectionFactory("localhost", 6379));
+        container.addMessageListener(adapter, new ChannelTopic(key));
+        container.afterPropertiesSet();
+        container.start();
+
+        String msg = null;
+
+        try {
+            msg = subscriber.internalQueue.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return msg;
     }
 }

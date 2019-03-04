@@ -29,7 +29,11 @@
             <artifactId>jedis</artifactId>
             <version>2.9.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.ea.async</groupId>
+            <artifactId>ea-async</artifactId>
+            <version>1.2.2</version>
+        </dependency>
     </dependencies>
     <properties>
         <java.version>1.8</java.version>
@@ -39,6 +43,19 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.ea.async</groupId>
+                <artifactId>ea-async-maven-plugin</artifactId>
+                <version>1.2.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>instrument</goal>
+                            <goal>instrument-test</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
