@@ -19,18 +19,18 @@ public class HelloController {
 
     @RequestMapping("/")
     public String index() {
-        return "HELLO WORLD!";
+        return "Spring API with Observer pattern";
     }
 
     @GetMapping("/channel")
-    public ResponseEntity<String> start(@RequestParam String key) {
-        if (StringUtils.isNullOrWhitespace(key)) {
-            throw new IllegalArgumentException("Invalid key");
+    public ResponseEntity<String> start(@RequestParam String channel) {
+        if (StringUtils.isNullOrWhitespace(channel)) {
+            throw new IllegalArgumentException("Invalid channel");
         }
 
-        await(provider.setAsync(key, "Waiting"));
+        await(provider.setAsync(channel, "Waiting"));
         
-        Optional<String> status = await(provider.watchAsync(key));
+        Optional<String> status = await(provider.watchAsync(channel));
 
         return status.isPresent() 
             ? new ResponseEntity<String>(status.get(), HttpStatus.OK)
@@ -38,12 +38,16 @@ public class HelloController {
     }
 
     @GetMapping("/set")
-    public ResponseEntity<String> set(@RequestParam String key, @RequestParam String value) {
-        if (StringUtils.isNullOrWhitespace(key) || StringUtils.isNullOrWhitespace(value)) {
-            throw new IllegalArgumentException("Invalid key/value");
+    public ResponseEntity<String> set(@RequestParam String channel, @RequestParam String status) {
+        if (StringUtils.isNullOrWhitespace(channel)) {
+            throw new IllegalArgumentException("Invalid channel");
+        }
+
+        if (StringUtils.isNullOrWhitespace(status)) {
+            throw new IllegalArgumentException("Invalid status");
         }
         
-        await(provider.setAndNotifyAsync(key, value));
+        await(provider.setAndNotifyAsync(channel, status));
         
         return new ResponseEntity<String>(HttpStatus.OK);
     }

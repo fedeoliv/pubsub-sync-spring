@@ -20,31 +20,31 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public CompletableFuture<Void> setAsync(String key, String value) {
+    public CompletableFuture<Void> setAsync(String channel, String status) {
         return CompletableFuture.runAsync(() -> {
-            executor.stringSet(key, value);
+            executor.stringSet(channel, status);
         });
     }
 
     @Override
-    public CompletableFuture<Void> setAndNotifyAsync(String key, String value) {
+    public CompletableFuture<Void> setAndNotifyAsync(String channel, String status) {
         return CompletableFuture.runAsync(() -> {
-            executor.stringSet(key, value);
-            executor.publish(key, value);
+            executor.stringSet(channel, status);
+            executor.publish(channel, status);
         });
     }
 
     @Override
-    public CompletableFuture<String> getAsync(String key) {
+    public CompletableFuture<String> getAsync(String channel) {
         return CompletableFuture.supplyAsync(() -> {
-            return executor.stringGet(key);
+            return executor.stringGet(channel);
         });
     }
 
     @Override
-    public CompletableFuture<Optional<String>> watchAsync(String key) {
+    public CompletableFuture<Optional<String>> watchAsync(String channel) {
         return CompletableFuture.supplyAsync(() -> {
-            RedisMessageSubscriber subscriber = subscribe(key);
+            RedisMessageSubscriber subscriber = subscribe(channel);
             return getStatus(subscriber);
         });
     }
@@ -55,21 +55,21 @@ public class RedisProvider implements Provider {
         return new JedisConnectionFactory(redisConfig);
     }
 
-    private RedisMessageSubscriber subscribe(String key) {
+    private RedisMessageSubscriber subscribe(String channel) {
         RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
-        RedisMessageListenerContainer container = createContainer(subscriber, key);
+        RedisMessageListenerContainer container = createContainer(subscriber, channel);
 
         container.start();
 
         return subscriber;
     }
 
-    private RedisMessageListenerContainer createContainer(RedisMessageSubscriber subscriber, String key) {
+    private RedisMessageListenerContainer createContainer(RedisMessageSubscriber subscriber, String channel) {
         MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 
         container.setConnectionFactory(connectionFactory);
-        container.addMessageListener(adapter, new ChannelTopic(key));
+        container.addMessageListener(adapter, new ChannelTopic(channel));
         container.afterPropertiesSet();
 
         return container;
