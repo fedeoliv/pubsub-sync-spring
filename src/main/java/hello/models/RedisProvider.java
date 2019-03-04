@@ -22,19 +22,16 @@ public class RedisProvider implements Provider {
 
     @Override
     public CompletableFuture<Void> setAsync(String key, String value) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             await(stringSet(key, value));
-            return null;
         });
     }
 
     @Override
     public CompletableFuture<Void> setAndNotifyAsync(String key, String value) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             await(setAsync(key, value));
             await(publish(key, value));
-
-            return null;
         });
     }
 
@@ -47,9 +44,8 @@ public class RedisProvider implements Provider {
 
     @Override
     public synchronized CompletableFuture<String> watchAsync(String key) {
-        String lastValue = await(subscribeAsync(key));
-
         return CompletableFuture.supplyAsync(() -> {
+            String lastValue = await(subscribeAsync(key));
             return lastValue;
         });
     }
@@ -63,23 +59,19 @@ public class RedisProvider implements Provider {
     }
 
     private JedisConnectionFactory jedisConnectionFactory(String hostName, int port) {
-        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(hostName, port);
-        // redisStandaloneConfiguration.setPassword(RedisPassword.of("yourRedisPasswordIfAny"));
-
-        return new JedisConnectionFactory(redisStandaloneConfiguration);
+        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(hostName, port);
+        // redisConfig.setPassword(RedisPassword.of("yourRedisPasswordIfAny"));
+        return new JedisConnectionFactory(redisConfig);
     }
 
     private CompletableFuture<Void> stringSet(String key, String value) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             redisTemplate.execute((RedisCallback<String>) connection -> {
                 StringRedisConnection stringConn = (StringRedisConnection) connection;
                 stringConn.set(key, value);
                 return null;
             });
-
-            return null;
         });
-
     }
 
     private String stringGet(String key) {
@@ -90,9 +82,8 @@ public class RedisProvider implements Provider {
     }
 
     private CompletableFuture<Void> publish(String key, String value) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             redisTemplate.convertAndSend(key, value);
-            return null;
         });
     }
 
