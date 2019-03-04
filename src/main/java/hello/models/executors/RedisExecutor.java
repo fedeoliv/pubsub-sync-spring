@@ -1,7 +1,5 @@
 package hello.models.executors;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
