@@ -1,5 +1,6 @@
-package hello.models;
+package hello.models.providers;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -10,14 +11,16 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import hello.models.subscribers.RedisMessageSubscriber;
 import static com.ea.async.Async.await;
 
-// @Service
 public class RedisProvider implements Provider {
+    private final JedisConnectionFactory connectionFactory;
     private final StringRedisTemplate redisTemplate;
 
     public RedisProvider(String hostName, int port) {
-        redisTemplate = redisTemplate(hostName, port);
+        connectionFactory = createConnectionFactory(hostName, port);
+        redisTemplate = createRedisTemplate();
     }
 
     @Override
@@ -38,27 +41,26 @@ public class RedisProvider implements Provider {
     @Override
     public CompletableFuture<String> getAsync(String key) {
         return CompletableFuture.supplyAsync(() -> {
-            return stringGet(key.toString());
+            return await(stringGet(key.toString()));
         });
     }
 
     @Override
-    public synchronized CompletableFuture<String> watchAsync(String key) {
+    public synchronized CompletableFuture<Optional<String>> watchAsync(String key) {
         return CompletableFuture.supplyAsync(() -> {
-            String lastValue = await(subscribeAsync(key));
-            return lastValue;
+            return await(subscribeAsync(key));
         });
     }
 
     @Bean
-    private StringRedisTemplate redisTemplate(String hostName, int port) {
+    private StringRedisTemplate createRedisTemplate() {
         StringRedisTemplate redisTemplate = new StringRedisTemplate();
-        redisTemplate.setConnectionFactory(jedisConnectionFactory(hostName, port));
+        redisTemplate.setConnectionFactory(connectionFactory);
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
 
-    private JedisConnectionFactory jedisConnectionFactory(String hostName, int port) {
+    private JedisConnectionFactory createConnectionFactory(String hostName, int port) {
         RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(hostName, port);
         // redisConfig.setPassword(RedisPassword.of("yourRedisPasswordIfAny"));
         return new JedisConnectionFactory(redisConfig);
@@ -66,7 +68,7 @@ public class RedisProvider implements Provider {
 
     private CompletableFuture<Void> stringSet(String key, String value) {
         return CompletableFuture.runAsync(() -> {
-            redisTemplate.execute((RedisCallback<String>) connection -> {
+            redisTemplate.execute((RedisCallback<Void>) connection -> {
                 StringRedisConnection stringConn = (StringRedisConnection) connection;
                 stringConn.set(key, value);
                 return null;
@@ -74,10 +76,12 @@ public class RedisProvider implements Provider {
         });
     }
 
-    private String stringGet(String key) {
-        return redisTemplate.execute((RedisCallback<String>) connection -> {
-            StringRedisConnection stringConn = (StringRedisConnection) connection;
-            return stringConn.get(key);
+    private CompletableFuture<String> stringGet(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            return redisTemplate.execute((RedisCallback<String>) connection -> {
+                StringRedisConnection stringConn = (StringRedisConnection) connection;
+                return stringConn.get(key);
+            });
         });
     }
 
@@ -87,26 +91,40 @@ public class RedisProvider implements Provider {
         });
     }
 
-    private CompletableFuture<String> subscribeAsync(String key) {
+    private CompletableFuture<Optional<String>> subscribeAsync(String key) {
         return CompletableFuture.supplyAsync(() -> {
-            RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
-            MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
-            RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-
-            container.setConnectionFactory(jedisConnectionFactory("localhost", 6379));
-            container.addMessageListener(adapter, new ChannelTopic(key));
-            container.afterPropertiesSet();
-            container.start();
-
-            String msg = null;
-
-            try {
-                msg = subscriber.internalQueue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            return msg;
+            RedisMessageSubscriber subscriber = subscribe(key);
+            return getStatus(subscriber);
         });
+    }
+
+    private RedisMessageSubscriber subscribe(String key) {
+        RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
+        RedisMessageListenerContainer container = createContainer(subscriber, key);
+
+        container.start();
+
+        return subscriber;
+    }
+
+    private RedisMessageListenerContainer createContainer(RedisMessageSubscriber subscriber, String key) {
+        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener(adapter, new ChannelTopic(key));
+        container.afterPropertiesSet();
+
+        return container;
+    }
+
+    private Optional<String> getStatus(RedisMessageSubscriber subscriber) {
+        try {
+            return Optional.of(subscriber.internalQueue.take());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
     }
 }

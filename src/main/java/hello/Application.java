@@ -6,8 +6,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import hello.models.Provider;
-import hello.models.RedisProvider;
+import hello.models.providers.Provider;
+import hello.models.providers.RedisProvider;
 
 @SpringBootApplication
 public class Application {

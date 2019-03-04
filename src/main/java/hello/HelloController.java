@@ -1,17 +1,15 @@
 package hello;
 
 import org.springframework.web.bind.annotation.RestController;
-
-import hello.models.Provider;
-import hello.models.RedisProvider;
+import hello.models.providers.Provider;
 import hello.utils.StringUtils;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Optional;
 import static com.ea.async.Async.await;
 
 @RestController
@@ -32,22 +30,11 @@ public class HelloController {
 
         await(provider.setAsync(key, "Waiting"));
         
-        String status = await(provider.watchAsync(key));
+        Optional<String> status = await(provider.watchAsync(key));
 
-        return new ResponseEntity<String>(status, HttpStatus.OK);
-
-        // try {
-        //     provider.setAsync(key, "Waiting").get();
-        //     String status = provider.watchAsync(key).get();
-
-        //     return new ResponseEntity<String>(status, HttpStatus.OK);
-        // } catch (InterruptedException e) {
-        //     e.printStackTrace();
-        // } catch (ExecutionException e) {
-        //     e.printStackTrace();
-        // }
-
-		// return new ResponseEntity<String>("Error", HttpStatus.NOT_ACCEPTABLE);
+        return status.isPresent() 
+            ? new ResponseEntity<String>(status.get(), HttpStatus.OK)
+            : new ResponseEntity<String>("Invalid status", HttpStatus.NOT_ACCEPTABLE);
     }
 
     @GetMapping("/set")
