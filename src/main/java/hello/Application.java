@@ -1,14 +1,13 @@
 package hello;
 
 import java.util.Arrays;
-
-import com.ea.async.Async;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import hello.models.Provider;
+import hello.models.RedisProvider;
 
 @SpringBootApplication
 public class Application {
@@ -31,44 +30,8 @@ public class Application {
         };
     }
 
-
-    // @Bean
-    // public RedisProvider getTransformerBean() {
-    //     return new RedisProvider("localhost", 6379);
-    // }
-
-    // @Bean
-    // MessageListenerAdapter messageListener() { 
-    //     return new MessageListenerAdapter(new RedisMessageSubscriber());
-    // }
-
-    // @Bean
-    // JedisConnectionFactory jedisConnectionFactory() {
-    //     return new JedisConnectionFactory();
-    // }
-    
-    // @Bean
-    // public RedisTemplate<String, Object> redisTemplate() {
-    //     RedisTemplate<String, Object> template = new RedisTemplate<>();
-    //     template.setConnectionFactory(jedisConnectionFactory());
-    //     return template;
-    // }
-
-    // @Bean
-    // RedisMessageListenerContainer redisContainer() {
-    //     RedisMessageListenerContainer container = new RedisMessageListenerContainer(); 
-    //     container.setConnectionFactory(jedisConnectionFactory()); 
-    //     container.addMessageListener(messageListener(), topic()); 
-    //     return container; 
-    // }
-
-    // @Bean
-    // MessagePublisher redisPublisher() { 
-    //     return new RedisMessagePublisher(redisTemplate(), topic());
-    // }
-
-    // @Bean
-    // ChannelTopic topic() {
-    //     return new ChannelTopic("messageQueue");
-    // }
+    @Bean
+    public Provider getTransformerBean() {
+        return new RedisProvider("localhost", 6379);
+    }
 }

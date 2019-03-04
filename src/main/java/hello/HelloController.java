@@ -1,8 +1,12 @@
 package hello;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import hello.models.Provider;
 import hello.models.RedisProvider;
 import hello.utils.StringUtils;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,12 +16,8 @@ import static com.ea.async.Async.await;
 
 @RestController
 public class HelloController {
-    // @Autowired
-    RedisProvider provider;
-
-    public HelloController() {
-        provider = new RedisProvider("localhost", 6379);
-    }
+    @Autowired
+    Provider provider;
 
     @RequestMapping("/")
     public String index() {

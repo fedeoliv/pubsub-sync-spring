@@ -12,10 +12,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class RedisMessageSubscriber implements MessageListener {
     public final BlockingQueue<String> internalQueue = new ArrayBlockingQueue<String>(1);
-    public List<String> messageList = new ArrayList<String>();
 
     public synchronized void onMessage(Message message, byte[] pattern) {
-        messageList.add(message.toString());
         System.out.println("Message received: " + message.toString());
 
         try {

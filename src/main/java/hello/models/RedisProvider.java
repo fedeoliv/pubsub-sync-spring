@@ -10,13 +10,15 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+
 import static com.ea.async.Async.await;
 
-// @Service
 public class RedisProvider implements Provider {
     private final StringRedisTemplate redisTemplate;
+    private final RedisMessageSubscriber subscriber;
 
     public RedisProvider(String hostName, int port) {
+        subscriber = new RedisMessageSubscriber();
         redisTemplate = redisTemplate(hostName, port);
     }
 
@@ -97,7 +99,6 @@ public class RedisProvider implements Provider {
     }
 
     private String subscribeAsync(String key) {
-        RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
         MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 
