@@ -8,13 +8,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class RedisMessageSubscriber implements MessageListener {
-    public final BlockingQueue<String> internalQueue = new ArrayBlockingQueue<String>(1);
+    private static final int CAPACITY = 1;
+    public final BlockingQueue<String> statusQueue = new ArrayBlockingQueue<String>(CAPACITY);
 
     public synchronized void onMessage(Message message, byte[] pattern) {
-        System.out.println("Message received: " + message.toString());
-
         try {
-            internalQueue.put(message.toString());
+            statusQueue.put(message.toString());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
