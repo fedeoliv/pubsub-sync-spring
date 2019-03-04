@@ -10,15 +10,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-
 import static com.ea.async.Async.await;
 
+// @Service
 public class RedisProvider implements Provider {
     private final StringRedisTemplate redisTemplate;
-    private final RedisMessageSubscriber subscriber;
 
     public RedisProvider(String hostName, int port) {
-        subscriber = new RedisMessageSubscriber();
         redisTemplate = redisTemplate(hostName, port);
     }
 
@@ -49,7 +47,7 @@ public class RedisProvider implements Provider {
 
     @Override
     public synchronized CompletableFuture<String> watchAsync(String key) {
-        String lastValue = subscribeAsync(key);
+        String lastValue = await(subscribeAsync(key));
 
         return CompletableFuture.supplyAsync(() -> {
             return lastValue;
@@ -98,23 +96,26 @@ public class RedisProvider implements Provider {
         });
     }
 
-    private String subscribeAsync(String key) {
-        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+    private CompletableFuture<String> subscribeAsync(String key) {
+        return CompletableFuture.supplyAsync(() -> {
+            RedisMessageSubscriber subscriber = new RedisMessageSubscriber();
+            MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber);
+            RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 
-        container.setConnectionFactory(jedisConnectionFactory("localhost", 6379));
-        container.addMessageListener(adapter, new ChannelTopic(key));
-        container.afterPropertiesSet();
-        container.start();
+            container.setConnectionFactory(jedisConnectionFactory("localhost", 6379));
+            container.addMessageListener(adapter, new ChannelTopic(key));
+            container.afterPropertiesSet();
+            container.start();
 
-        String msg = null;
+            String msg = null;
 
-        try {
-            msg = subscriber.internalQueue.take();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            try {
+                msg = subscriber.internalQueue.take();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-        return msg;
+            return msg;
+        });
     }
 }
