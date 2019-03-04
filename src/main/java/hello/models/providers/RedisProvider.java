@@ -2,31 +2,29 @@ package hello.models.providers;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+
+import hello.models.executors.RedisExecutor;
 import hello.models.subscribers.RedisMessageSubscriber;
 import static com.ea.async.Async.await;
 
 public class RedisProvider implements Provider {
     private final JedisConnectionFactory connectionFactory;
-    private final StringRedisTemplate redisTemplate;
+    private final RedisExecutor executor;
 
     public RedisProvider(String hostName, int port) {
         connectionFactory = createConnectionFactory(hostName, port);
-        redisTemplate = createRedisTemplate();
+        executor = new RedisExecutor(connectionFactory);
     }
 
     @Override
     public CompletableFuture<Void> setAsync(String key, String value) {
         return CompletableFuture.runAsync(() -> {
-            await(stringSet(key, value));
+            executor.stringSet(key, value);
         });
     }
 
@@ -52,42 +50,21 @@ public class RedisProvider implements Provider {
         });
     }
 
-    @Bean
-    private StringRedisTemplate createRedisTemplate() {
-        StringRedisTemplate redisTemplate = new StringRedisTemplate();
-        redisTemplate.setConnectionFactory(connectionFactory);
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
-    }
-
     private JedisConnectionFactory createConnectionFactory(String hostName, int port) {
         RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(hostName, port);
         // redisConfig.setPassword(RedisPassword.of("yourRedisPasswordIfAny"));
         return new JedisConnectionFactory(redisConfig);
     }
 
-    private CompletableFuture<Void> stringSet(String key, String value) {
-        return CompletableFuture.runAsync(() -> {
-            redisTemplate.execute((RedisCallback<Void>) connection -> {
-                StringRedisConnection stringConn = (StringRedisConnection) connection;
-                stringConn.set(key, value);
-                return null;
-            });
-        });
-    }
-
     private CompletableFuture<String> stringGet(String key) {
         return CompletableFuture.supplyAsync(() -> {
-            return redisTemplate.execute((RedisCallback<String>) connection -> {
-                StringRedisConnection stringConn = (StringRedisConnection) connection;
-                return stringConn.get(key);
-            });
+            return executor.stringGet(key);
         });
     }
 
     private CompletableFuture<Void> publish(String key, String value) {
         return CompletableFuture.runAsync(() -> {
-            redisTemplate.convertAndSend(key, value);
+            executor.publish(key, value);
         });
     }
 

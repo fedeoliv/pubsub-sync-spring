@@ -39,12 +39,8 @@ public class HelloController {
 
     @GetMapping("/set")
     public ResponseEntity<String> set(@RequestParam String key, @RequestParam String value) {
-        if (StringUtils.isNullOrWhitespace(key)) {
-            throw new IllegalArgumentException("Invalid key");
-        }
-
-        if (StringUtils.isNullOrWhitespace(value)) {
-            throw new IllegalArgumentException("Invalid value");
+        if (StringUtils.isNullOrWhitespace(key) || StringUtils.isNullOrWhitespace(value)) {
+            throw new IllegalArgumentException("Invalid key/value");
         }
         
         await(provider.setAndNotifyAsync(key, value));
