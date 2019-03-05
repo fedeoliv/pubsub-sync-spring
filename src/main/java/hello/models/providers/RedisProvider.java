@@ -7,6 +7,8 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+
+import hello.models.Transaction;
 import hello.models.executors.RedisExecutor;
 import hello.models.subscribers.RedisMessageSubscriber;
 
@@ -20,17 +22,17 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public CompletableFuture<Void> setAsync(String channel, String status) {
+    public CompletableFuture<Void> setAsync(Transaction transaction) {
         return CompletableFuture.runAsync(() -> {
-            executor.stringSet(channel, status);
+            executor.stringSet(transaction);
         });
     }
 
     @Override
-    public CompletableFuture<Void> setAndNotifyAsync(String channel, String status) {
+    public CompletableFuture<Void> setAndNotifyAsync(Transaction transaction) {
         return CompletableFuture.runAsync(() -> {
-            executor.stringSet(channel, status);
-            executor.publish(channel, status);
+            executor.stringSet(transaction);
+            executor.publish(transaction);
         });
     }
 

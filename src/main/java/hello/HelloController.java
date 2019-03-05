@@ -1,14 +1,17 @@
 package hello;
 
 import org.springframework.web.bind.annotation.RestController;
+import hello.models.Result;
+import hello.models.Transaction;
 import hello.models.providers.Provider;
 import hello.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Optional;
 import static com.ea.async.Async.await;
 
@@ -22,33 +25,51 @@ public class HelloController {
         return "Spring API with Observer pattern";
     }
 
-    @GetMapping("/channel")
-    public ResponseEntity<String> start(@RequestParam String channel) {
-        if (StringUtils.isNullOrWhitespace(channel)) {
-            throw new IllegalArgumentException("Invalid channel");
+    @PostMapping("/api/transaction")
+    public ResponseEntity<String> start(@RequestBody Transaction transaction) {
+        Result result = isValidTransaction(transaction);
+
+        if (!result.isValid()) {
+            throw new IllegalArgumentException(result.getErrorMessage());
         }
 
-        await(provider.setAsync(channel, "Waiting"));
+        await(provider.setAsync(transaction));
         
-        Optional<String> status = await(provider.watchAsync(channel));
+        Optional<String> status = await(provider.watchAsync(transaction.getId()));
 
         return status.isPresent() 
             ? new ResponseEntity<String>(status.get(), HttpStatus.OK)
             : new ResponseEntity<String>("Invalid status", HttpStatus.NOT_ACCEPTABLE);
     }
 
-    @GetMapping("/set")
-    public ResponseEntity<String> set(@RequestParam String channel, @RequestParam String status) {
-        if (StringUtils.isNullOrWhitespace(channel)) {
-            throw new IllegalArgumentException("Invalid channel");
-        }
+    @PutMapping("/api/transaction")
+    public ResponseEntity<String> set(@RequestBody Transaction transaction) {
+        Result result = isValidTransaction(transaction);
 
-        if (StringUtils.isNullOrWhitespace(status)) {
-            throw new IllegalArgumentException("Invalid status");
+        if (!result.isValid()) {
+            throw new IllegalArgumentException(result.getErrorMessage());
         }
         
-        await(provider.setAndNotifyAsync(channel, status));
+        await(provider.setAndNotifyAsync(transaction));
         
         return new ResponseEntity<String>(HttpStatus.OK);
+    }
+
+    private Result isValidTransaction(Transaction transaction) {
+        Result result = new Result();
+
+        if (StringUtils.isNullOrWhitespace(transaction.getId())) {
+            result.setValid(false);
+            result.setErrorMessage("Invalid transaction ID");
+            return result;
+        }
+
+        if (StringUtils.isNullOrWhitespace(transaction.getStatus())) {
+            result.setValid(false);
+            result.setErrorMessage("Invalid status");
+            return result;
+        }
+
+        return result;
     }
 }

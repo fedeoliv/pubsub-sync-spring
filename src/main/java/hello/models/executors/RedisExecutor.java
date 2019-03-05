@@ -8,6 +8,8 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import hello.models.Transaction;
+
 public class RedisExecutor {
     private final StringRedisTemplate redisTemplate;
     
@@ -30,10 +32,10 @@ public class RedisExecutor {
 	 * @param channel the Redis channel
      * @param value a Redis value associated to a channel
 	 */
-    public void stringSet(String channel, String value) {
+    public void stringSet(Transaction transaction) {
         redisTemplate.execute((RedisCallback<Void>) connection -> {
             StringRedisConnection stringConn = (StringRedisConnection) connection;
-            stringConn.set(channel, value);
+            stringConn.set(transaction.getId(), transaction.getStatus());
             return null;
         });
     }
@@ -58,7 +60,7 @@ public class RedisExecutor {
      * @param channel the Redis channel
      * @param value a Redis value associated to a channel
      */
-    public void publish(String channel, String value) {
-        redisTemplate.convertAndSend(channel, value);
+    public void publish(Transaction transaction) {
+        redisTemplate.convertAndSend(transaction.getId(), transaction.getStatus());
     }
 }
