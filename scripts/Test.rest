@@ -4,7 +4,8 @@ content-type: application/json
 
 {
     "id": "3740730e-bab6-4da4-8525-5ff904371274",
-    "status": "Waiting"
+    "status": "Waiting",
+    "timeoutSeconds": 5
 }
 
 ###

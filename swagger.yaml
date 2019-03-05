@@ -1,0 +1,94 @@
+swagger: "2.0"
+info:
+  description: "This is a Spring Boot API sample that uses the Observer pattern to interface synchronous REST API responses and asynchronous messaging brokers."
+  version: "1.0.0"
+  title: "Observer Spring API"
+host: "localhost:8080"
+basePath: "/api"
+schemes:
+- "https"
+- "http"
+paths:
+  /transaction:
+    post:
+      tags:
+      - "Transactions"
+      summary: "Start a new transaction"
+      operationId: "startTransaction"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Transaction object that needs to be added to the request"
+        required: true
+        schema:
+          $ref: "#/definitions/Transaction"
+      responses:
+        200:
+          description: "Successful operation"
+        404:
+          description: "Status not found"
+    put:
+      tags:
+      - "Transactions"
+      summary: "Update a transaction status"
+      description: ""
+      operationId: "updateTransactionStatus"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Transaction object that needs to be added to the request"
+        required: true
+        schema:
+          $ref: "#/definitions/TransactionUpdate"
+      responses:
+        200:
+          description: "Successful operation"
+definitions:
+  Transaction:
+      type: "object"
+      required:
+      - "id"
+      - "status"
+      properties:
+        id:
+          type: "string"
+          description: "Transaction ID"
+        status:
+          type: "string"
+          description: "Transaction status"
+          enum:
+          - "pending"
+          - "finished"
+        timeoutSeconds:
+          type: "string"
+          description: "Response timeout in seconds"
+      xml:
+        name: "Transaction"
+  TransactionUpdate:
+      type: "object"
+      required:
+      - "id"
+      - "status"
+      properties:
+        id:
+          type: "string"
+          description: "Transaction ID"
+        status:
+          type: "string"
+          description: "Transaction status"
+          enum:
+          - "pending"
+          - "finished"
+      xml:
+        name: "Transaction"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"

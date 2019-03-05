@@ -3,6 +3,7 @@ package hello.models;
 public class Transaction {
     private String id;
     private String status;
+    private long timeoutSeconds = 60;
 
     /**
      * @return the id
@@ -30,5 +31,19 @@ public class Transaction {
      */
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    /**
+     * @return the timeoutSeconds
+     */
+    public long getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    /**
+     * @param timeoutSeconds the timeoutSeconds to set
+     */
+    public void setTimeoutSeconds(long timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
     }
 }

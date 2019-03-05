@@ -35,11 +35,11 @@ public class HelloController {
 
         await(provider.setAsync(transaction));
         
-        Optional<String> status = await(provider.watchAsync(transaction.getId()));
+        Optional<String> status = await(provider.watchAsync(transaction));
 
         return status.isPresent() 
             ? new ResponseEntity<String>(status.get(), HttpStatus.OK)
-            : new ResponseEntity<String>("Invalid status", HttpStatus.NOT_ACCEPTABLE);
+            : new ResponseEntity<String>("Invalid status", HttpStatus.NOT_FOUND);
     }
 
     @PutMapping("/api/transaction")
@@ -58,6 +58,12 @@ public class HelloController {
     private Result isValidTransaction(Transaction transaction) {
         Result result = new Result();
 
+        if (transaction == null) {
+            result.setValid(false);
+            result.setErrorMessage("Invalid transaction");
+            return result;
+        }
+
         if (StringUtils.isNullOrWhitespace(transaction.getId())) {
             result.setValid(false);
             result.setErrorMessage("Invalid transaction ID");
@@ -67,6 +73,12 @@ public class HelloController {
         if (StringUtils.isNullOrWhitespace(transaction.getStatus())) {
             result.setValid(false);
             result.setErrorMessage("Invalid status");
+            return result;
+        }
+
+        if (transaction.getTimeoutSeconds() <= 0) {
+            result.setValid(false);
+            result.setErrorMessage("Invalid request timeout");
             return result;
         }
 

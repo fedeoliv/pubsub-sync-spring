@@ -1,5 +1,6 @@
 package hello.models.providers;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -7,10 +8,10 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-
 import hello.models.Transaction;
 import hello.models.executors.RedisExecutor;
 import hello.models.subscribers.RedisMessageSubscriber;
+import static hello.utils.CompletableFutureHelper.within;
 
 public class RedisProvider implements Provider {
     private final JedisConnectionFactory connectionFactory;
@@ -44,11 +45,16 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> watchAsync(String channel) {
-        return CompletableFuture.supplyAsync(() -> {
-            RedisMessageSubscriber subscriber = subscribe(channel);
+    public CompletableFuture<Optional<String>> watchAsync(Transaction transaction) {
+
+        CompletableFuture<Optional<String>> watchFuture = CompletableFuture.supplyAsync(() -> {
+            RedisMessageSubscriber subscriber = subscribe(transaction.getId());
             return getStatus(subscriber);
         });
+
+        Duration timeout = Duration.ofSeconds(transaction.getTimeoutSeconds());
+
+        return within(watchFuture, timeout);
     }
 
     private JedisConnectionFactory createConnectionFactory(String hostName, int port) {
