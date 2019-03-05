@@ -1,0 +1,19 @@
+# Start a transaction and wait for a synchronous response
+POST http://localhost:8080/api/transaction
+content-type: application/json
+
+{
+    "id": "3740730e-bab6-4da4-8525-5ff904371274",
+    "status": "Waiting"
+}
+
+###
+
+# Updates the current status
+PUT http://localhost:8080/api/transaction
+content-type: application/json
+
+{
+    "id": "3740730e-bab6-4da4-8525-5ff904371274",
+    "status": "Finished"
+}
