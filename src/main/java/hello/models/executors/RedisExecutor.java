@@ -27,32 +27,38 @@ public class RedisExecutor {
 	 * Set key to hold the string value. 
      * If key already holds a value, it is overwritten.
 	 *
-	 * @param key the Redis channel
+	 * @param channel the Redis channel
      * @param value a Redis value associated to a channel
 	 */
-    public void stringSet(String key, String value) {
+    public void stringSet(String channel, String value) {
         redisTemplate.execute((RedisCallback<Void>) connection -> {
             StringRedisConnection stringConn = (StringRedisConnection) connection;
-            stringConn.set(key, value);
+            stringConn.set(channel, value);
             return null;
         });
     }
 
     /**
-	 * Get the value of key. 
-     * If the key does not exist, an empty string is returned.
+	 * Get the value of channel. 
+     * If the channel does not exist, an empty string is returned.
 	 *
-	 * @param key the Redis channel
+	 * @param channel the Redis channel
      * @return an optional string that represents a value associated to a key.
 	 */
-    public Optional<String> stringGet(String key) {
+    public Optional<String> stringGet(String channel) {
         return redisTemplate.execute((RedisCallback<Optional<String>>) connection -> {
             StringRedisConnection stringConn = (StringRedisConnection) connection;
-            return Optional.of(stringConn.get(key));
+            return Optional.of(stringConn.get(channel));
         });
     }
 
-    public void publish(String key, String value) {
-        redisTemplate.convertAndSend(key, value);
+    /**
+     * Publishes the message to the given channel.
+     *
+     * @param channel the Redis channel
+     * @param value a Redis value associated to a channel
+     */
+    public void publish(String channel, String value) {
+        redisTemplate.convertAndSend(channel, value);
     }
 }
