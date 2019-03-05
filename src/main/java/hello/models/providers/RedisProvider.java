@@ -35,7 +35,7 @@ public class RedisProvider implements Provider {
     }
 
     @Override
-    public CompletableFuture<String> getAsync(String channel) {
+    public CompletableFuture<Optional<String>> getAsync(String channel) {
         return CompletableFuture.supplyAsync(() -> {
             return executor.stringGet(channel);
         });
