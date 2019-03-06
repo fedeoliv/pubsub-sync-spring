@@ -9,9 +9,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Example;
-import io.swagger.annotations.ExampleProperty;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +17,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.Optional;
-import java.util.Locale.Category;
-
 import static com.ea.async.Async.await;
 
 @RestController
@@ -58,13 +53,9 @@ public class HelloController {
             : new ResponseEntity<String>("Invalid status", HttpStatus.NOT_FOUND);
     }
 
-    @ApiOperation(value="Update a transaction status", response=Transaction.class)
+    @ApiOperation(value="Update a transaction status", response = Transaction.class)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success", 
-            examples = @Example(value = { 
-                @ExampleProperty(value = "Finished", mediaType = "application/json") 
-            })),
-            
+        @ApiResponse(code = 200, message = "Success")
     })
     @PutMapping("/api/transaction")
     public ResponseEntity<String> set(@RequestBody Transaction transaction) {
