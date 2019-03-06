@@ -1,10 +1,8 @@
-# Observer pattern for REST APIs with Redis pub/sub
+# Pub-Sub pattern for synchronous REST API responses
 
-This repo contains a Spring REST API sample that uses the Observer pattern to interface *synchronous* REST API responses and asynchronous messaging brokers.
+This repo contains a Java Spring REST API sample that uses the Pub-Sub pattern to interface *synchronous* REST API responses and asynchronous messaging brokers.
 
-## Concepts
-
-*WIP*
+![Architecture](./images/architecture.jpg)
 
 ## Prerequisites
 
