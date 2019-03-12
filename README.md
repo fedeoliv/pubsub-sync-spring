@@ -4,6 +4,32 @@ This repo contains a Java Spring REST API sample that uses the Pub-Sub pattern t
 
 ![Architecture](./images/architecture.jpg)
 
+## Time Complexity
+
+Considering the following time complexity for Redis commands used in the implementation:
+
+| Command | Time Complexity | Description |
+| -------------- | -------------- |-------------- |
+| SET | O(1) | Set key to hold the string value, where N is the number of clients subscribed to the receiving channel and M is the total number of subscribed patterns (by any client).|
+| PUBLISH | O(N+M) | Posts a message to the given channel, where N is the number of clients subscribed to the receiving channel and M is the total number of subscribed patterns (by any client). |
+| SUBSCRIBE | O(P) | Subscribes the client to the specified channels, where P is the number of channels to subscribe to. |
+
+### **HTTP POST**
+
+For the `HTTP POST` operation we have the following time complexity:
+
+    = SET + SUBSCRIBE
+    = O(1) + O(P) 
+    = O(P)
+
+### **HTTP PUT**
+
+For the `HTTP PUT` operation we have the following time complexity:
+
+    = SET + PUBLISH
+    = O(1) + O(N+M) 
+    = O(N+M)
+    
 ## Prerequisites
 
 - Java 8 or higher + Maven
