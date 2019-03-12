@@ -1,8 +1,14 @@
 # Pub-Sub pattern for synchronous REST API responses
 
-This repo contains a Java Spring REST API sample that uses the Pub-Sub pattern to interface *synchronous* REST API responses and asynchronous messaging brokers.
+This repo contains a Java Spring REST API sample that uses the Pub-Sub pattern to interface *synchronous* responses and asynchronous messaging brokers.
 
 ![Architecture](./images/architecture.jpg)
+
+1. An user sends a request to the POST method with `Pending` status.
+2. The POST method saves the `Pending` status on Redis, subscribes to the channel (where the key is the `transactionId`) and waits to be notified about a status change.
+3. Service A sends a request to the PUT method with `Finished` status.
+4. The PUT method saves the `Finished` status on Redis and notifies the channel consumers.
+5. The POST method is notified about the status change to `Finished` and then gives a response to the user.
 
 ## Time Complexity
 
@@ -29,7 +35,7 @@ For the `HTTP PUT` operation we have the following time complexity:
     = SET + PUBLISH
     = O(1) + O(N+M) 
     = O(N+M)
-    
+
 ## Prerequisites
 
 - Java 8 or higher + Maven
